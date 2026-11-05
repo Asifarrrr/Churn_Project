@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Churn Prediction Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Figtree:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--paper:#f5f1ea;--card:#fffdf9;--ink:#1d1b16;--mute:#6f6a5e;--line:#e4ddd0;--soft:#efe9dd;--green:#0f766e;--green2:#14b8a6;--orange:#e4572e;--gold:#f2a65a}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);font:15px/1.5 Figtree,system-ui,sans-serif;background:var(--paper) radial-gradient(#d8cfbd 1px,transparent 1px) 0 0/22px 22px}
+h1,h2,h3{font-family:"Bricolage Grotesque",Georgia,serif;margin:0;letter-spacing:-.01em}
+.wrap{max-width:1240px;margin:0 auto;padding:30px 28px 70px}
+header{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:26px}
+.title{display:flex;align-items:center;gap:16px}
+.logo{width:48px;height:48px;border-radius:50%;background:conic-gradient(var(--orange) 0 32%,var(--green) 0);-webkit-mask:radial-gradient(circle,transparent 12px,#000 13px);mask:radial-gradient(circle,transparent 12px,#000 13px)}
+header h1{font-size:34px;line-height:1.1}
+header p{margin:4px 0 0;color:var(--mute)}
+.status{display:flex;align-items:center;gap:9px;background:var(--card);border:1px solid var(--line);padding:8px 15px;border-radius:999px;font-size:13px;color:var(--mute)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--orange)}
+.status.ok .dot{background:var(--green2);animation:pulse 2s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 #14b8a6aa}70%{box-shadow:0 0 0 8px #14b8a600}100%{box-shadow:0 0 0 0 #14b8a600}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px;box-shadow:0 1px 0 #fff inset,0 8px 30px -18px #3b2f1a55}
+.card h2{font-size:22px;margin-bottom:4px}
+.sub{color:var(--mute);margin:0 0 20px;font-size:14px}
+.sechead{display:flex;align-items:baseline;gap:12px;margin:34px 0 14px}
+.sechead h2{font-size:24px}.sechead span{color:var(--mute);font-size:14px}
+.grid{display:grid;gap:20px;margin-bottom:20px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
+.kpi{padding:18px 20px}
+.kpi span{color:var(--mute);font-size:13px}
+.kpi b{display:block;font:700 34px "Bricolage Grotesque",serif;margin-top:2px}
+.kpi.hot b{color:var(--orange)}
+.fields3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:6px}
+.field{margin-top:18px}
+.field>label{display:block;font-weight:600;font-size:14px;margin-bottom:8px}
+.fields3 .field{margin-top:0}
+.fields3 input{width:100%;background:var(--paper);border:1.5px solid var(--line);color:var(--ink);padding:11px 12px;border-radius:12px;font:inherit;transition:border-color .15s}
+.fields3 input:hover,.fields3 input:focus{border-color:var(--green);outline:0}
+.hintline{color:var(--mute);font-size:12px;margin-top:4px}
+.seg{display:flex;flex-wrap:wrap;gap:4px;padding:4px;background:var(--soft);border-radius:13px}
+.seg button{flex:1 1 auto;border:0;background:none;color:var(--mute);padding:9px 12px;border-radius:10px;font:inherit;font-weight:600;cursor:pointer;transition:.15s}
+.seg button:hover{color:var(--ink);background:#ffffff88}
+.seg button.on{background:var(--green);color:#fff;box-shadow:0 4px 12px -4px #0f766e99}
+:is(button,input,summary):focus-visible{outline:2px solid var(--green2);outline-offset:2px}
+button.primary{margin-top:26px;width:100%;background:var(--ink);color:var(--paper);border:0;border-radius:14px;padding:15px;font:600 16px Figtree;cursor:pointer;transition:background .2s,transform .15s}
+button.primary:hover{background:var(--green);transform:translateY(-1px)}
+button.primary:disabled{opacity:.6;cursor:wait;transform:none}
+.err{color:var(--orange);font-size:14px;margin-top:12px}
+.result{position:sticky;top:20px;align-self:start;text-align:center;padding:32px 26px}
+.result .label{color:var(--mute);font-size:14px}
+.bignum{font:700 64px/1.1 "Bricolage Grotesque",serif;margin:6px 0 4px}
+.chipv{display:inline-block;padding:6px 16px;border-radius:999px;font-weight:600;font-size:14px;background:var(--soft);color:var(--mute)}
+.chipv.churn{background:#e4572e1f;color:var(--orange)}.chipv.stay{background:#0f766e1c;color:var(--green)}
+.meter{position:relative;height:12px;border-radius:99px;margin:26px 6px 8px;background:linear-gradient(90deg,var(--green2),var(--gold),var(--orange))}
+.pin{position:absolute;top:50%;width:24px;height:24px;border-radius:50%;background:var(--card);border:4px solid var(--ink);transform:translate(-50%,-50%);transition:left 1s cubic-bezier(.2,.8,.2,1)}
+.scale{display:flex;justify-content:space-between;color:var(--mute);font-size:12px;margin:0 2px}
+.note{color:var(--mute);font-size:13px;margin:18px auto 0;max-width:260px}
+.toolbar{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:28px;align-items:start}
+.toolbar .field{margin-top:0}
+.range-vals{display:flex;justify-content:space-between;font-weight:600;color:var(--green);margin-bottom:4px}
+.dual{position:relative;height:28px}
+.track{position:absolute;top:12px;left:10px;right:10px;height:4px;background:var(--line);border-radius:4px}
+.fill{position:absolute;height:100%;background:var(--green);border-radius:4px}
+.dual input{position:absolute;left:0;top:0;width:100%;height:28px;margin:0;background:none;pointer-events:none;-webkit-appearance:none;appearance:none}
+.dual input::-webkit-slider-runnable-track{background:none}
+.dual input::-webkit-slider-thumb{-webkit-appearance:none;pointer-events:all;width:20px;height:20px;border-radius:50%;background:var(--card);border:3px solid var(--green);box-shadow:0 3px 8px #0003;cursor:grab}
+.dual input::-moz-range-thumb{pointer-events:all;width:14px;height:14px;border-radius:50%;background:var(--card);border:3px solid var(--green);cursor:grab}
+.cwrap{position:relative;height:330px}
+.empty{text-align:center;color:var(--mute);padding:50px 20px}
+details.card summary{cursor:pointer;font:600 20px "Bricolage Grotesque",serif}
+.tbl{overflow:auto;max-height:380px;margin-top:16px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{color:var(--mute);font-weight:500;position:sticky;top:0;background:var(--card)}
+tbody tr:hover{background:var(--paper)}
+.pill{padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.pill.c{background:#e4572e1f;color:var(--orange)}.pill.s{background:#0f766e1c;color:var(--green)}
+@media(max-width:1000px){.grid{grid-template-columns:1fr!important}.kpis{grid-template-columns:repeat(2,1fr)}.toolbar{grid-template-columns:1fr;gap:20px}.result{position:static}.wrap{padding:22px 16px 60px}}
+@media(max-width:560px){.fields3{grid-template-columns:1fr}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo, useRef } = React;
+const API = 'http://127.0.0.1:8000';
+const C = { churn:'#e4572e', stay:'#14b8a6', green:'#0f766e', gold:'#f2a65a', blue:'#3d5a80', mute:'#6f6a5e', line:'#e4ddd0' };
+Chart.defaults.color = C.mute;
+Chart.defaults.font.family = 'Figtree, system-ui, sans-serif';
+
+const REGIONS = ['north', 'south', 'east', 'west'];
+const PLANS = ['basic', 'plus', 'pro'];
+const GENDERS = [['Gender_male', 'Male'], ['Gender_female', 'Female'], ['Gender_non_binary', 'Non-Binary'], ['Gender_unknown', 'Unknown']];
+const PAYMENTS = [['Payment_Method_credit_card', 'Credit Card'], ['Payment_Method_crypto', 'Crypto'], ['Payment_Method_e_wallet', 'e-Wallet'], ['Payment_Method_paypal', 'PayPal']];
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const pick = (r, list, fallback) => { const m = list.find(([k]) => r[k] == 1); return m ? m[1] : fallback; };
+const regionOf = r => r.Region_north == 1 ? 'north' : r.Region_south == 1 ? 'south' : r.Region_east == 1 ? 'east' : 'west';
+const planOf = r => r.Subscription_Plan_basic == 1 ? 'basic' : r.Subscription_Plan_plus == 1 ? 'plus' : 'pro';
+const churned = r => r.Churn == 1;
+
+function Seg({ options, value, onChange, label }) {
+  return (
+    <div className="seg" role="radiogroup" aria-label={label}>
+      {options.map(([v, text]) => (
+        <button key={v} role="radio" aria-checked={v === value} className={v === value ? 'on' : ''} onClick={() => onChange(v)}>{text}</button>
+      ))}
+    </div>
+  );
+}
+
+function DualSlider({ lo, hi, value: [a, b], onChange }) {
+  const pct = v => hi === lo ? 0 : (v - lo) / (hi - lo) * 100;
+  return (
+    <div className="dual">
+      <div className="track"><div className="fill" style={{ left: pct(a) + '%', width: (pct(b) - pct(a)) + '%' }} /></div>
+      <input type="range" min={lo} max={hi} value={a} aria-label="Minimum monthly spend"
+        style={{ zIndex: a > hi - (hi - lo) * 0.1 ? 3 : 1 }} onChange={e => onChange([Math.min(+e.target.value, b), b])} />
+      <input type="range" min={lo} max={hi} value={b} aria-label="Maximum monthly spend"
+        style={{ zIndex: 2 }} onChange={e => onChange([a, Math.max(+e.target.value, a)])} />
+    </div>
+  );
+}
+
+function useCountUp(target, decimals = 0) {
+  const [v, setV] = useState(0);
+  const prev = useRef(0);
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setV(target); return; }
+    const from = prev.current, t0 = performance.now(), dur = 650;
+    let id;
+    const tick = now => {
+      const p = Math.min((now - t0) / dur, 1), e = 1 - Math.pow(1 - p, 3);
+      setV(from + (target - from) * e);
+      if (p < 1) id = requestAnimationFrame(tick); else prev.current = target;
+    };
+    id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
+  }, [target]);
+  return v.toFixed(decimals);
+}
+
+function Kpi({ label, value, decimals = 0, prefix = '', suffix = '', hot, empty }) {
+  const shown = useCountUp(value, decimals);
+  return (
+    <div className={'card kpi' + (hot ? ' hot' : '')}>
+      <span>{label}</span>
+      <b>{empty ? '–' : prefix + Number(shown).toLocaleString(undefined, { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) + suffix}</b>
+    </div>
+  );
+}
+
+function ChartBox({ type, data, options }) {
+  const ref = useRef(), chart = useRef();
+  useEffect(() => {
+    chart.current = new Chart(ref.current, { type, data, options });
+    return () => chart.current.destroy();
+  }, []);
+  useEffect(() => {
+    if (!chart.current) return;
+    chart.current.data = data;
+    chart.current.update();
+  }, [data]);
+  return <div className="cwrap"><canvas ref={ref} /></div>;
+}
+
+/* ---------- Limited number inputs (same limits as the Streamlit app) ---------- */
+const clampNum = (v, lo, hi) => {
+  const n = v === '' || isNaN(+v) ? lo : Math.round(+v);
+  return Math.min(hi, Math.max(lo, n));
+};
+
+function NumField({ label, min, max, step, value, onChange }) {
+  return (
+    <div className="field">
+      <label>{label}</label>
+      <input type="number" min={min} max={max} step={step} value={value}
+        onChange={e => onChange(e.target.value)}
+        onBlur={() => onChange(String(clampNum(value, min, max)))} />
+      <div className="hintline">From {min} to {max}</div>
+    </div>
+  );
+}
+
+/* ---------- Prediction ---------- */
+function Predictor() {
+  const [f, setF] = useState({ Age: 35, Days: 30, Spend: 100, Calls: 2, Gender: 'Male', Region: 'north', Plan: 'basic', Pay: 'Credit Card' });
+  const [res, setRes] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState('');
+  const set = k => v => setF(s => ({ ...s, [k]: v }));
+  const num = k => e => setF(s => ({ ...s, [k]: e.target.value }));
+  const is = (a, b) => a === b ? 1 : 0;
+
+  async function predict() {
+    const age = clampNum(f.Age, 11, 70), days = clampNum(f.Days, 0, 179), spend = clampNum(f.Spend, 0, 247);
+    setF(s => ({ ...s, Age: age, Days: days, Spend: spend }));
+    const payload = {
+      Age: age, Days_Since_Last_Login: days, Customer_Service_Calls: +f.Calls, Monthly_Spend: spend,
+      Gender_female: is(f.Gender, 'Female'), Gender_male: is(f.Gender, 'Male'),
+      Gender_non_binary: is(f.Gender, 'Non-Binary'), Gender_unknown: is(f.Gender, 'Unknown'),
+      Region_east: is(f.Region, 'east'), Region_north: is(f.Region, 'north'), Region_south: is(f.Region, 'south'), Region_west: is(f.Region, 'west'),
+      Subscription_Plan_basic: is(f.Plan, 'basic'), Subscription_Plan_plus: is(f.Plan, 'plus'), Subscription_Plan_pro: is(f.Plan, 'pro'),
+      Payment_Method_credit_card: is(f.Pay, 'Credit Card'), Payment_Method_crypto: is(f.Pay, 'Crypto'),
+      Payment_Method_e_wallet: is(f.Pay, 'e-Wallet'), Payment_Method_paypal: is(f.Pay, 'PayPal')
+    };
+    setLoading(true); setErr('');
+    try {
+      const r = await fetch(API + '/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!r.ok) throw new Error(r.status);
+      const j = await r.json();
+      setRes({ churn: j.Prediction === 1, p: j.Probability });
+    } catch (e) {
+      setErr('Could not get a prediction. Check that the FastAPI server is running on port 8000.');
+    }
+    setLoading(false);
+  }
+
+  const pct = res ? Math.round(res.p * 1000) / 10 : null;
+  return (
+    <div className="grid" style={{ gridTemplateColumns: '1.5fr .8fr' }}>
+      <div className="card">
+        <h2>Customer profile</h2>
+        <p className="sub">Describe the customer, then run the prediction.</p>
+        <div className="fields3">
+          <NumField label="Age" min={11} max={70} step={1} value={f.Age} onChange={set('Age')} />
+          <NumField label="Days since last login" min={0} max={179} step={1} value={f.Days} onChange={set('Days')} />
+          <NumField label="Monthly spend" min={0} max={247} step={10} value={f.Spend} onChange={set('Spend')} />
+        </div>
+        <div className="field"><label>Customer service calls</label>
+          <Seg label="Customer service calls" value={f.Calls} onChange={set('Calls')} options={[0,1,2,3,4,5,6,7,8,9].map(n => [n, String(n)])} /></div>
+        <div className="field"><label>Gender</label>
+          <Seg label="Gender" value={f.Gender} onChange={set('Gender')} options={GENDERS.map(([, t]) => [t, t])} /></div>
+        <div className="field"><label>Region</label>
+          <Seg label="Region" value={f.Region} onChange={set('Region')} options={REGIONS.map(r => [r, cap(r)])} /></div>
+        <div className="field"><label>Subscription plan</label>
+          <Seg label="Subscription plan" value={f.Plan} onChange={set('Plan')} options={PLANS.map(p => [p, cap(p)])} /></div>
+        <div className="field"><label>Payment method</label>
+          <Seg label="Payment method" value={f.Pay} onChange={set('Pay')} options={PAYMENTS.map(([, t]) => [t, t])} /></div>
+        <button className="primary" onClick={predict} disabled={loading}>{loading ? 'Predicting…' : 'Predict churn'}</button>
+        {err && <div className="err" role="alert">{err}</div>}
+      </div>
+
+      <div className="card result">
+        <div className="label">Churn probability</div>
+        <div className="bignum">{res ? pct + '%' : '–'}</div>
+        <span className={'chipv ' + (res ? (res.churn ? 'churn' : 'stay') : '')}>{res ? (res.churn ? 'Likely to churn' : 'Likely to stay') : 'No prediction yet'}</span>
+        <div className="meter"><div className="pin" style={{ left: (res ? res.p * 100 : 0) + '%', opacity: res ? 1 : .35 }} /></div>
+        <div className="scale"><span>Stays</span><span>Churns</span></div>
+        <p className="note">{res ? 'The pin shows where this customer sits between staying and leaving.' : 'Fill in the profile and press Predict churn.'}</p>
+      </div>
+    </div>
+  );
+}
+
+/* ---------- App ---------- */
+function App() {
+  const [rows, setRows] = useState([]);
+  const [online, setOnline] = useState(null);
+  const [spend, setSpend] = useState([0, 0]);
+  const [region, setRegion] = useState('north');
+  const [plan, setPlan] = useState('basic');
+
+  useEffect(() => {
+    fetch(API + '/data').then(r => r.json()).then(list => {
+      const data = list.map(r => ({ ...r, Region: regionOf(r), Plan: planOf(r) }));
+      let lo = Infinity, hi = -Infinity;
+      for (const r of data) { if (r.Monthly_Spend < lo) lo = r.Monthly_Spend; if (r.Monthly_Spend > hi) hi = r.Monthly_Spend; }
+      setRows(data); setOnline(true); setSpend([Math.floor(lo), Math.ceil(hi)]);
+    }).catch(() => setOnline(false));
+  }, []);
+
+  const bounds = useMemo(() => {
+    let lo = Infinity, hi = -Infinity;
+    for (const r of rows) { if (r.Monthly_Spend < lo) lo = r.Monthly_Spend; if (r.Monthly_Spend > hi) hi = r.Monthly_Spend; }
+    return rows.length ? [Math.floor(lo), Math.ceil(hi)] : [0, 1];
+  }, [rows]);
+
+  const inSpend = r => r.Monthly_Spend >= spend[0] && r.Monthly_Spend <= spend[1];
+  const d = useMemo(() => rows.filter(r => inSpend(r) && r.Plan === plan && r.Region === region), [rows, spend, plan, region]);
+  const n = d.length;
+  const avg = k => n ? d.reduce((s, r) => s + r[k], 0) / n : 0;
+  const churnRate = n ? d.filter(churned).length / n * 100 : 0;
+
+  const scatterData = useMemo(() => {
+    const pt = (r, i) => ({ x: r.Monthly_Spend, y: r.Customer_Service_Calls + (((i * 37) % 100) / 100 - 0.5) * 0.5, calls: r.Customer_Service_Calls, age: r.Age, days: r.Days_Since_Last_Login });
+    return { datasets: [
+      { label: 'Churned', data: d.filter(churned).map(pt), backgroundColor: C.churn + 'bb', pointRadius: 4, pointHoverRadius: 7 },
+      { label: 'Stayed', data: d.filter(r => !churned(r)).map(pt), backgroundColor: C.stay + '99', pointRadius: 4, pointHoverRadius: 7 }
+    ]};
+  }, [d]);
+
+  const pieData = useMemo(() => {
+    const ch = rows.filter(r => churned(r) && inSpend(r) && r.Plan === plan);
+    return { labels: REGIONS.map(cap), datasets: [{ data: REGIONS.map(g => ch.filter(r => r.Region === g).length), backgroundColor: [C.churn, C.gold, C.green, C.blue], borderColor: '#fffdf9', borderWidth: 3 }] };
+  }, [rows, spend, plan]);
+
+  const grid = { color: C.line };
+  const legend = { position: 'bottom', labels: { usePointStyle: true } };
+  const scatterOpts = { maintainAspectRatio: false, animation: false,
+    scales: { x: { title: { display: true, text: 'Monthly spend' }, grid }, y: { title: { display: true, text: 'Customer service calls' }, grid, ticks: { stepSize: 1 } } },
+    plugins: { legend, tooltip: { callbacks: { label: c => `Spend ${c.raw.x} · ${c.raw.calls} calls · age ${c.raw.age} · ${c.raw.days} days since login` } } } };
+  const pieOpts = { maintainAspectRatio: false, cutout: '62%', plugins: { legend } };
+
+  return (
+    <div className="wrap">
+      <header>
+        <div className="title">
+          <div className="logo" />
+          <div>
+            <h1>Customer Churn Predictor</h1>
+            <p>A random forest model that flags customers likely to leave.</p>
+          </div>
+        </div>
+        <div className={'status' + (online ? ' ok' : '')}>
+          <span className="dot" />
+          {online === null ? 'Connecting to API…' : online ? 'API connected' : 'API offline. Start FastAPI on port 8000'}
+        </div>
+      </header>
+
+      <Predictor />
+
+      <div className="sechead"><h2>Explore the data</h2><span>{rows.length > 0 && `${rows.length.toLocaleString()} customers loaded`}</span></div>
+
+      <div className="card" style={{ marginBottom: 20 }}>
+        <div className="toolbar">
+          <div className="field">
+            <label>Monthly spend</label>
+            <div className="range-vals"><span>${spend[0]}</span><span>${spend[1]}</span></div>
+            <DualSlider lo={bounds[0]} hi={bounds[1]} value={spend} onChange={setSpend} />
+          </div>
+          <div className="field"><label>Region</label><Seg label="Region filter" value={region} onChange={setRegion} options={REGIONS.map(r => [r, cap(r)])} /></div>
+          <div className="field"><label>Subscription</label><Seg label="Subscription filter" value={plan} onChange={setPlan} options={PLANS.map(p => [p, cap(p)])} /></div>
+        </div>
+      </div>
+
+      <section className="kpis">
+        <Kpi label="Customers in selection" value={n} empty={!rows.length} />
+        <Kpi label="Churn rate" value={churnRate} decimals={1} suffix="%" hot empty={!n} />
+        <Kpi label="Average monthly spend" value={avg('Monthly_Spend')} decimals={2} prefix="$" empty={!n} />
+        <Kpi label="Avg days since login" value={avg('Days_Since_Last_Login')} decimals={1} empty={!n} />
+      </section>
+
+      {rows.length > 0 && n === 0 && <div className="card empty grid">No customers match this selection. Try another region or plan, or widen the spend range.</div>}
+
+      {rows.length > 0 && <>
+        <section className="grid" style={{ gridTemplateColumns: '1.3fr .7fr' }}>
+          <div className="card"><h2>Spend vs service calls</h2><p className="sub">Each dot is a customer in the selection. Calls are nudged slightly so dots don't overlap.</p><ChartBox type="scatter" data={scatterData} options={scatterOpts} /></div>
+          <div className="card"><h2>Where churn happens</h2><p className="sub">Churned customers by region, for the chosen plan and spend range.</p><ChartBox type="doughnut" data={pieData} options={pieOpts} /></div>
+        </section>
+        <details className="card">
+          <summary>First 100 rows</summary>
+          <div className="tbl"><table>
+            <thead><tr>{['Churn', 'Age', 'Gender', 'Region', 'Plan', 'Payment', 'Spend', 'Last login (days)', 'Calls'].map(c => <th key={c}>{c}</th>)}</tr></thead>
+            <tbody>{rows.slice(0, 100).map((r, i) => (
+              <tr key={i}>
+                <td><span className={'pill ' + (churned(r) ? 'c' : 's')}>{churned(r) ? 'Churned' : 'Stayed'}</span></td>
+                <td>{r.Age}</td><td>{pick(r, GENDERS, '–')}</td><td>{cap(r.Region)}</td><td>{cap(r.Plan)}</td><td>{pick(r, PAYMENTS, '–')}</td>
+                <td>{r.Monthly_Spend}</td><td>{r.Days_Since_Last_Login}</td><td>{r.Customer_Service_Calls}</td>
+              </tr>))}
+            </tbody>
+          </table></div>
+        </details>
+      </>}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
